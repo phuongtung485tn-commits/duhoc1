@@ -80,7 +80,7 @@ test("saveConfig stores a local copy even if Supabase sync fails", async () => {
   };
 
   const result = await saveConfig(config);
-  assert.equal(result, true);
+  assert.equal(result, false);
   assert.ok(localStore.has("funnel_site_config_v1"));
 });
 

@@ -263,12 +263,6 @@ export async function loadCloudConfig(
       mergeConfig(config, data as Partial<SiteConfig>),
       config,
     );
-    // An older cloud row may contain an empty webhook field and would
-    // otherwise erase the working local/default endpoint during hydration.
-    if (!hydrated.form.webhookUrl.trim()) {
-      hydrated.form.webhookUrl =
-        config.form.webhookUrl.trim() || DEFAULT_CONFIG.form.webhookUrl;
-    }
     return hydrated;
   } catch {
     return null;
@@ -286,17 +280,17 @@ export async function saveConfig(config: SiteConfig): Promise<boolean> {
 
   if (config.admin.supabaseUrl && config.admin.supabaseAnonKey) {
     try {
-      await syncConfigToSupabase(config);
+      return await syncConfigToSupabase(config);
     } catch {
-      // Supabase sync is best effort. The local copy is the source of truth.
+      // Keep the local copy, but report cloud sync failure to the Admin UI.
+      return false;
     }
-    return true;
   }
 
   console.warn(
     "Database mode is enabled, but Supabase URL/key are missing. Local save still succeeded.",
   );
-  return true;
+  return false;
 }
 
 export async function saveConfigWithCredentials(
