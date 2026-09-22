@@ -457,6 +457,7 @@ export function LeadForm({ id = "dang-ky" }: { id?: string }) {
         recommendedAction: assessment.recommendedAction,
         behaviorSummary: payload.behavior_summary,
         saleAdvice: payload.sale_advice,
+        saleAlign: selectedSaleRecipient,
         saleAssignedTo: selectedSaleRecipient,
         salesEmailRecipients: salesRecipients.join(", "),
         salesDistributionMode: config.emailAutomation.salesDistributionMode,

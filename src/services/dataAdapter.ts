@@ -502,6 +502,7 @@ export interface LeadRecord {
   recommendedAction?: string | undefined;
   behaviorSummary?: string | undefined;
   saleAdvice?: string | undefined;
+  saleAlign?: string | undefined;
   saleAssignedTo?: string | undefined;
   salesEmailRecipients?: string | undefined;
   salesDistributionMode?: string | undefined;
@@ -1111,6 +1112,7 @@ async function pushLeadToSupabase(
       recommended_action: lead.recommendedAction ?? null,
       behavior_summary: lead.behaviorSummary ?? null,
       sale_advice: lead.saleAdvice ?? null,
+      sale_align: lead.saleAlign ?? null,
       sale_assigned_to: lead.saleAssignedTo ?? null,
       sales_email_recipients: lead.salesEmailRecipients ?? null,
       sales_distribution_mode: lead.salesDistributionMode ?? null,

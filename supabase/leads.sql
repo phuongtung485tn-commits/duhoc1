@@ -15,6 +15,7 @@ create table if not exists public.leads (
   recommended_action text,
   behavior_summary text,
   sale_advice text,
+  sale_align text,
   sale_assigned_to text,
   sales_email_recipients text,
   sales_distribution_mode text,
@@ -51,6 +52,7 @@ create table if not exists public.leads (
 );
 
 alter table public.leads add column if not exists sale_assigned_to text;
+alter table public.leads add column if not exists sale_align text;
 alter table public.leads add column if not exists sales_email_recipients text;
 alter table public.leads add column if not exists sales_distribution_mode text;
 alter table public.leads add column if not exists sales_distribution_weights jsonb;
