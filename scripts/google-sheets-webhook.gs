@@ -202,7 +202,13 @@ function parsePayload(event) {
   if (!event || !event.postData || !event.postData.contents) {
     throw new Error("Missing JSON request body");
   }
-  return parseJsonPayload(event.postData.contents);
+  var raw = String(event.postData.contents || "").trim();
+  // Accept both application/json and the simple form POST used by the site.
+  // Some Apps Script deployments do not populate event.parameter reliably.
+  if (raw.indexOf("payload=") === 0) {
+    return parseJsonPayload(decodeURIComponent(raw.slice("payload=".length)));
+  }
+  return parseJsonPayload(raw);
 }
 
 function parseJsonPayload(raw) {

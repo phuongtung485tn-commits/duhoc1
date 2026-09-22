@@ -80,6 +80,45 @@ create table if not exists public.funnel_configs (
   data jsonb not null,
   updated_at timestamptz not null default now()
 );
+
+-- Public submit can decrement the counter without exposing the full config.
+-- The function performs the read/modify/write atomically under SECURITY DEFINER.
+create or replace function public.decrement_countdown_slot()
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  current_data jsonb;
+  current_slots integer;
+  next_data jsonb;
+begin
+  select data into current_data
+  from public.funnel_configs
+  where id = 1
+  for update;
+
+  if current_data is null then
+    return jsonb_build_object('ok', false, 'reason', 'config_missing');
+  end if;
+
+  current_slots := greatest(0, coalesce((current_data #>> '{countdown,slotsLeft}')::integer, 0));
+  next_data := jsonb_set(
+    current_data,
+    '{countdown,slotsLeft}',
+    to_jsonb(greatest(0, current_slots - 1)),
+    true
+  );
+  update public.funnel_configs
+  set data = next_data, updated_at = now()
+  where id = 1;
+  return jsonb_build_object('ok', true, 'slotsLeft', greatest(0, current_slots - 1));
+end;
+$$;
+
+revoke all on function public.decrement_countdown_slot() from public;
+grant execute on function public.decrement_countdown_slot() to anon, authenticated;
 alter table public.funnel_configs enable row level security;
 drop policy if exists "funnel configs can be read" on public.funnel_configs;
 create policy "funnel configs can be read" on public.funnel_configs for select using (true);

@@ -120,6 +120,29 @@ export function SiteConfigProvider({ children }: { children: ReactNode }) {
       return saved;
     }
 
+    // Prefer the public, narrowly-scoped RPC. It updates only slotsLeft and
+    // remains usable when the Vercel server-function route is unavailable.
+    try {
+      const response = await fetch(
+        `${nextConfig.admin.supabaseUrl.replace(/\/$/, "")}/rest/v1/rpc/decrement_countdown_slot`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            apikey: nextConfig.admin.supabaseAnonKey,
+            Authorization: `Bearer ${nextConfig.admin.supabaseAnonKey}`,
+          },
+          body: "{}",
+        },
+      );
+      if (response.ok) {
+        setDirty(false);
+        return true;
+      }
+    } catch {
+      // Try the service-role server function below as a compatibility fallback.
+    }
+
     // Public form submissions are anonymous, so the Supabase REST update may
     // be rejected by RLS even though saveConfig keeps the local copy. The
     // service-role function is the authoritative cloud update in database

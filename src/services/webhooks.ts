@@ -73,8 +73,10 @@ function hashString(value: string): number {
 
 export function buildSheetsRequest(payload: Record<string, unknown>) {
   return {
-    body: `payload=${JSON.stringify(payload)}`,
-    contentType: "application/x-www-form-urlencoded;charset=UTF-8",
+    // text/plain is a CORS-simple request and Apps Script parses the body as
+    // JSON. This also works with older deployments that do not read form data.
+    body: JSON.stringify(payload),
+    contentType: "text/plain;charset=UTF-8",
   };
 }
 
@@ -91,7 +93,7 @@ async function sendSheetsDirect(
     // response is opaque, so this path means the request was handed to Google.
     await fetch(endpoint, {
       method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      headers: { "Content-Type": "text/plain;charset=UTF-8" },
       body,
       mode: "no-cors",
       keepalive: true,
@@ -130,7 +132,9 @@ async function sendDirectWebhook(
       label,
       ok: response.ok,
       attempts: 1,
-      detail: response.ok ? "direct_browser_post" : `HTTP ${response.status}`,
+      detail: response.ok
+        ? "direct_browser_post"
+        : `HTTP ${response.status}: ${(await response.text()).slice(0, 180)}`,
     };
   } catch (error) {
     return {
