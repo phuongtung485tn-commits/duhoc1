@@ -82,6 +82,37 @@ const TIMEOUT_MS = 4_000;
 // Apps Script khởi động chậm hơn webhook thường, 4s hay bị timeout giả.
 const SHEETS_TIMEOUT_MS = 12_000;
 
+async function sendSheetsDirect(
+  endpoint: string,
+  body: string,
+): Promise<WebhookResult> {
+  try {
+    // Apps Script accepts this simple request without a CORS preflight. The
+    // response is opaque, so this path means the request was handed to Google.
+    await fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body,
+      mode: "no-cors",
+      keepalive: true,
+    });
+    return {
+      label: "Google Sheets",
+      ok: true,
+      attempts: 1,
+      detail: "direct_browser_post",
+    };
+  } catch (error) {
+    return {
+      label: "Google Sheets",
+      ok: false,
+      attempts: 1,
+      detail:
+        error instanceof Error ? error.message : "Direct Sheets request failed",
+    };
+  }
+}
+
 /**
  * Apps Script luôn trả HTTP 200 kể cả khi bản deploy không có doPost.
  * Vì vậy phải đọc nội dung trả về mới biết Sheet có nhận dữ liệu hay không.
@@ -307,6 +338,12 @@ async function postOne(
           const sheetsError = relay.ok
             ? appsScriptError(relay.body ?? "")
             : relay.detail || `HTTP ${relay.status}`;
+          if (!relay.ok) {
+            const fallback = await sendSheetsDirect(endpoint, request.body);
+            if (fallback.ok) {
+              return { ...fallback, label: ep.label || ep.type, attempts: 2 };
+            }
+          }
           return {
             label: ep.label || ep.type,
             ok: relay.ok && !sheetsError,
@@ -314,22 +351,34 @@ async function postOne(
             detail: sheetsError ?? "server_relay_sheets",
           };
         }
-        return {
-          label: ep.label || ep.type,
-          ok: false,
-          attempts: 1,
-          detail: "Server relay timeout",
-        };
+        return sendSheetsDirect(
+          endpoint,
+          buildSheetsRequest(
+            typeof body === "object" && body !== null
+              ? (body as Record<string, unknown>)
+              : { payload: body },
+          ).body,
+        );
       } catch (error) {
-        return {
-          label: ep.label || ep.type,
-          ok: false,
-          attempts: 1,
-          detail:
-            error instanceof Error
-              ? error.message
-              : "Direct Sheets request failed",
-        };
+        const fallback = await sendSheetsDirect(
+          endpoint,
+          buildSheetsRequest(
+            typeof body === "object" && body !== null
+              ? (body as Record<string, unknown>)
+              : { payload: body },
+          ).body,
+        );
+        return fallback.ok
+          ? { ...fallback, label: ep.label || ep.type }
+          : {
+              label: ep.label || ep.type,
+              ok: false,
+              attempts: 2,
+              detail:
+                error instanceof Error
+                  ? `${error.message}; ${fallback.detail || "direct fallback failed"}`
+                  : fallback.detail || "Direct Sheets request failed",
+            };
       }
     }
 

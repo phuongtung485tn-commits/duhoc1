@@ -115,10 +115,15 @@ export function SiteConfigProvider({ children }: { children: ReactNode }) {
     configRef.current = nextConfig;
     setConfig(nextConfig);
     const saved = await saveConfig(nextConfig);
-    if (saved) {
-      setDirty(false);
-      return true;
+    if (nextConfig.admin.storageMode !== "database") {
+      if (saved) setDirty(false);
+      return saved;
     }
+
+    // Public form submissions are anonymous, so the Supabase REST update may
+    // be rejected by RLS even though saveConfig keeps the local copy. The
+    // service-role function is the authoritative cloud update in database
+    // mode and must run before the form can redirect.
     const serverSaved = await decrementCountdownWithServiceRole({
       data: { url: nextConfig.admin.supabaseUrl },
     });
@@ -126,6 +131,7 @@ export function SiteConfigProvider({ children }: { children: ReactNode }) {
       handledCountdownLeads.current.delete(leadId);
       return false;
     }
+    setDirty(false);
     return true;
   }, []);
 

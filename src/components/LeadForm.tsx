@@ -328,11 +328,14 @@ export function LeadForm({ id = "dang-ky" }: { id?: string }) {
           .split(/[;,\n]/)
           .map((item) => item.trim())
           .filter(Boolean);
+      const configuredSalesList = Array.isArray(
+        config.emailAutomation.salesEmailList,
+      )
+        ? config.emailAutomation.salesEmailList
+        : parseSalesList(String(config.emailAutomation.salesEmailList || ""));
       const salesRecipients =
-        config.emailAutomation.salesEmailList.length > 0
-          ? config.emailAutomation.salesEmailList
-              .map((item) => item.trim())
-              .filter(Boolean)
+        configuredSalesList.length > 0
+          ? configuredSalesList.map((item) => item.trim()).filter(Boolean)
           : parseSalesList(config.emailAutomation.notifyEmail);
       const salesWeights = Object.fromEntries(
         Object.entries(
@@ -527,18 +530,18 @@ export function LeadForm({ id = "dang-ky" }: { id?: string }) {
           "Database mode fallback to local storage: Supabase cloud sync unavailable; lead was still saved locally.",
         );
       }
-      void decrementCountdown(savedLead.id)
-        .then((countdownSaved) => {
-          if (!countdownSaved) {
-            toast.warning("Lead đã lưu, nhưng chưa cập nhật được số suất.", {
-              description:
-                "Kiểm tra SUPABASE_URL và SUPABASE_SERVICE_ROLE_KEY trên server rồi redeploy.",
-            });
-          }
-        })
-        .catch((countdownErr) => {
+      const countdownSaved = await decrementCountdown(savedLead.id).catch(
+        (countdownErr) => {
           console.warn("[v0] decrementCountdown failed:", countdownErr);
+          return false;
+        },
+      );
+      if (!countdownSaved) {
+        toast.warning("Lead đã lưu, nhưng chưa cập nhật được số suất.", {
+          description:
+            "Kiểm tra SUPABASE_URL và SUPABASE_SERVICE_ROLE_KEY trên server rồi redeploy.",
         });
+      }
 
       // Ghi nhận chuyển đổi cho Analytics Dashboard + A/B comparison.
       // Lỗi tracking (vd localStorage đầy) không được chặn luồng submit.
