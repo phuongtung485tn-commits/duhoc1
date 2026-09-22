@@ -188,6 +188,7 @@ const MAX_PAYLOAD_BYTES = 60_000;
 
 export const WEBHOOK_FIELD_OPTIONS = [
   ["event", "Loại sự kiện"],
+  ["deployment_revision", "Phiên bản deployment"],
   ["webhook_delivery_id", "Mã giao webhook"],
   ["idempotency_key", "Mã chống trùng"],
   ["created_at", "Thời điểm submit"],

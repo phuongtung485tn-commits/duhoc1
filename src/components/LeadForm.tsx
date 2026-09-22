@@ -26,6 +26,7 @@ import {
   type LeadRecord,
 } from "@/services/dataAdapter";
 import { sendLeadEmail } from "@/lib/email.functions";
+import { DEPLOYMENT_REVISION } from "@/config/site-config";
 
 export const MAJORS = [
   "Công nghệ Ô tô điện",
@@ -377,6 +378,7 @@ export function LeadForm({ id = "dang-ky" }: { id?: string }) {
 
       const payload = {
         event: "lead_created",
+        deployment_revision: DEPLOYMENT_REVISION,
         webhook_delivery_id: webhookDeliveryId,
         idempotency_key: idempotencyKey,
         sale_align: selectedSaleRecipient,

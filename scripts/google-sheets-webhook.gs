@@ -105,6 +105,7 @@ function writePayload(payload) {
     const allHeaders = [
       "received_at",
       "event",
+      "deployment_revision",
       "webhook_delivery_id",
       "idempotency_key",
       "created_at",

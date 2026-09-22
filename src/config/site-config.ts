@@ -10,6 +10,9 @@
 
 export type StorageMode = "local" | "database";
 
+/** Visible in webhook payloads so production deployments can be verified. */
+export const DEPLOYMENT_REVISION = "sale-webhook-v3-20260922";
+
 export interface AdminConfig {
   adminPath: string;
   password: string;
