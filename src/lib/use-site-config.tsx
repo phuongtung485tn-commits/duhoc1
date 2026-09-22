@@ -114,8 +114,8 @@ export function SiteConfigProvider({ children }: { children: ReactNode }) {
     );
     configRef.current = nextConfig;
     setConfig(nextConfig);
-    const saved = await saveConfig(nextConfig);
     if (nextConfig.admin.storageMode !== "database") {
+      const saved = await saveConfig(nextConfig);
       if (saved) setDirty(false);
       return saved;
     }
@@ -136,8 +136,21 @@ export function SiteConfigProvider({ children }: { children: ReactNode }) {
         },
       );
       if (response.ok) {
-        setDirty(false);
-        return true;
+        const result = (await response.json()) as {
+          ok?: boolean;
+          slotsLeft?: number;
+        };
+        if (result.ok !== true || typeof result.slotsLeft !== "number") {
+          throw new Error("Countdown RPC returned an invalid result");
+        }
+        nextConfig.countdown.slotsLeft = Math.max(0, result.slotsLeft);
+        configRef.current = nextConfig;
+        setConfig(nextConfig);
+        // Persist the exact server value locally/cloud without decrementing it
+        // a second time through the config PATCH path.
+        const saved = await saveConfig(nextConfig);
+        if (saved) setDirty(false);
+        return saved;
       }
     } catch {
       // Try the service-role server function below as a compatibility fallback.
