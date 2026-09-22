@@ -129,16 +129,41 @@ const inputClass =
 
 /** Rate limiting: giới hạn số lần gửi trong 1 cửa sổ thời gian / trình duyệt (cấu hình trong Admin). */
 let rateStamps: number[] = [];
+const RATE_LIMIT_STORAGE_KEY = "funnel_submit_rate_stamps_v1";
+
+function readRateStamps(): number[] {
+  if (typeof window === "undefined") return rateStamps;
+  try {
+    const parsed = JSON.parse(
+      window.localStorage.getItem(RATE_LIMIT_STORAGE_KEY) || "[]",
+    ) as unknown;
+    return Array.isArray(parsed)
+      ? parsed.filter((value): value is number => typeof value === "number")
+      : [];
+  } catch {
+    return [];
+  }
+}
 
 function rateLimited(maxCount: number, windowMin: number): boolean {
   if (typeof window === "undefined") return false;
   const now = Date.now();
   const windowMs = Math.max(1, windowMin) * 60 * 1000;
-  let stamps = rateStamps;
+  let stamps = [...readRateStamps(), ...rateStamps];
   stamps = stamps.filter((t) => now - t < windowMs);
-  if (stamps.length >= Math.max(1, maxCount)) return true;
+  // Deduplicate timestamps that came from both module memory and storage.
+  stamps = Array.from(new Set(stamps)).sort((a, b) => a - b);
+  if (stamps.length >= Math.max(1, maxCount)) {
+    rateStamps = stamps;
+    return true;
+  }
   stamps.push(now);
   rateStamps = stamps;
+  try {
+    window.localStorage.setItem(RATE_LIMIT_STORAGE_KEY, JSON.stringify(stamps));
+  } catch {
+    // The in-memory limiter still protects the current page if storage fails.
+  }
   return false;
 }
 
@@ -407,6 +432,13 @@ export function LeadForm({ id = "dang-ky" }: { id?: string }) {
         traffic_ads_source: visitorBehaviorPayload.trafficAdsSource,
         sales_distribution_weights: salesWeights,
         sales_send_webhook: Boolean(config.emailAutomation.salesSendWebhook),
+        email_automation_enabled: config.emailAutomation.enabled,
+        email_provider: config.emailAutomation.provider,
+        email_from_configured: Boolean(config.emailAutomation.fromEmail.trim()),
+        email_customer_template: config.emailAutomation.subject,
+        email_sales_template: config.emailAutomation.notifySubject,
+        email_customer_cta_url: config.emailAutomation.customerCtaUrl,
+        email_sales_cta_url: config.emailAutomation.salesCtaUrl,
       };
 
       // Lưu Mini-CRM (localStorage / Supabase) để hiện trong bảng Quản Lý Lead.

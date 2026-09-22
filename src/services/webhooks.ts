@@ -203,6 +203,13 @@ export const WEBHOOK_FIELD_OPTIONS = [
   ["sales_email_recipients", "Danh sách sale tham gia chia"],
   ["sales_distribution_weights", "Trọng số phân phối sale"],
   ["sales_send_webhook", "Bật webhook gán sale"],
+  ["email_automation_enabled", "Bật tự động hóa email"],
+  ["email_provider", "Nhà cung cấp email"],
+  ["email_from_configured", "Đã cấu hình email From"],
+  ["email_customer_template", "Mẫu tiêu đề email khách"],
+  ["email_sales_template", "Mẫu tiêu đề email sale"],
+  ["email_customer_cta_url", "CTA URL khách"],
+  ["email_sales_cta_url", "CTA URL sale"],
   ["landing_url", "URL landing"],
   ["ab_variant", "Biến thể A/B"],
   ["ai_score", "AI score"],
@@ -240,6 +247,22 @@ export const WEBHOOK_FIELD_OPTIONS = [
 ] as const;
 
 export const DEFAULT_SHEETS_FIELDS = WEBHOOK_FIELD_OPTIONS.map(([key]) => key);
+
+const REQUIRED_LEAD_FIELDS = [
+  "sale_align",
+  "sale_assigned_to",
+  "sales_distribution_mode",
+  "sales_email_recipients",
+  "sales_distribution_weights",
+  "sales_send_webhook",
+  "email_automation_enabled",
+  "email_provider",
+  "email_from_configured",
+  "email_customer_template",
+  "email_sales_template",
+  "email_customer_cta_url",
+  "email_sales_cta_url",
+] as const;
 
 function validUrl(value: string): boolean {
   try {
@@ -323,17 +346,20 @@ async function postOne(
 
     if (ep.type === "sheets") {
       const hasFields = Boolean(ep.fields?.length);
+      const fields = hasFields
+        ? Array.from(new Set([...ep.fields!, ...REQUIRED_LEAD_FIELDS]))
+        : undefined;
       const hasColumnMap = Boolean(
         ep.columnMap && Object.keys(ep.columnMap).length,
       );
       const filtered = hasFields
         ? Object.fromEntries(
-            Object.entries(payload).filter(([key]) => ep.fields?.includes(key)),
+            Object.entries(payload).filter(([key]) => fields?.includes(key)),
           )
         : payload;
       body = {
         ...filtered,
-        ...(hasFields ? { sheet_fields: ep.fields } : {}),
+        ...(hasFields ? { sheet_fields: fields } : {}),
         ...(hasColumnMap ? { sheet_columns: ep.columnMap } : {}),
       };
     } else if (ep.type === "telegram") {
