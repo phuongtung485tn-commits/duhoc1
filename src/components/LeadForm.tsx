@@ -405,6 +405,8 @@ export function LeadForm({ id = "dang-ky" }: { id?: string }) {
         behavior_summary: visitorBehaviorPayload.behaviorSummary,
         device_tech_info: visitorBehaviorPayload.deviceTechInfo,
         traffic_ads_source: visitorBehaviorPayload.trafficAdsSource,
+        sales_distribution_weights: salesWeights,
+        sales_send_webhook: Boolean(config.emailAutomation.salesSendWebhook),
       };
 
       // Lưu Mini-CRM (localStorage / Supabase) để hiện trong bảng Quản Lý Lead.
@@ -423,6 +425,11 @@ export function LeadForm({ id = "dang-ky" }: { id?: string }) {
         recommendedAction: assessment.recommendedAction,
         behaviorSummary: payload.behavior_summary,
         saleAdvice: payload.sale_advice,
+        saleAssignedTo: selectedSaleRecipient,
+        salesEmailRecipients: salesRecipients.join(", "),
+        salesDistributionMode: config.emailAutomation.salesDistributionMode,
+        salesDistributionWeights: salesWeights,
+        salesSendWebhook: Boolean(config.emailAutomation.salesSendWebhook),
         deviceTechInfo: payload.device_tech_info,
         trafficAdsSource: payload.traffic_ads_source,
         networkProvider: payload.network_provider || undefined,

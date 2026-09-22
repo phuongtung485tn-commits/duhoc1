@@ -508,6 +508,11 @@ export interface LeadRecord {
   recommendedAction?: string | undefined;
   behaviorSummary?: string | undefined;
   saleAdvice?: string | undefined;
+  saleAssignedTo?: string | undefined;
+  salesEmailRecipients?: string | undefined;
+  salesDistributionMode?: string | undefined;
+  salesDistributionWeights?: Record<string, number> | undefined;
+  salesSendWebhook?: boolean | undefined;
   deviceTechInfo?: string | undefined;
   trafficAdsSource?: string | undefined;
   networkProvider?: string | undefined;
@@ -1112,6 +1117,11 @@ async function pushLeadToSupabase(
       recommended_action: lead.recommendedAction ?? null,
       behavior_summary: lead.behaviorSummary ?? null,
       sale_advice: lead.saleAdvice ?? null,
+      sale_assigned_to: lead.saleAssignedTo ?? null,
+      sales_email_recipients: lead.salesEmailRecipients ?? null,
+      sales_distribution_mode: lead.salesDistributionMode ?? null,
+      sales_distribution_weights: lead.salesDistributionWeights ?? null,
+      sales_send_webhook: lead.salesSendWebhook ?? null,
       device_tech_info: lead.deviceTechInfo ?? null,
       traffic_ads_source: lead.trafficAdsSource ?? null,
       network_provider: lead.networkProvider ?? null,

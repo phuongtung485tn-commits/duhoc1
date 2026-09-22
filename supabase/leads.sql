@@ -15,6 +15,11 @@ create table if not exists public.leads (
   recommended_action text,
   behavior_summary text,
   sale_advice text,
+  sale_assigned_to text,
+  sales_email_recipients text,
+  sales_distribution_mode text,
+  sales_distribution_weights jsonb,
+  sales_send_webhook boolean,
   device_tech_info text,
   traffic_ads_source text,
   network_provider text,
@@ -44,6 +49,12 @@ create table if not exists public.leads (
   browser text,
   visitor_behavior_payload jsonb
 );
+
+alter table public.leads add column if not exists sale_assigned_to text;
+alter table public.leads add column if not exists sales_email_recipients text;
+alter table public.leads add column if not exists sales_distribution_mode text;
+alter table public.leads add column if not exists sales_distribution_weights jsonb;
+alter table public.leads add column if not exists sales_send_webhook boolean;
 
 alter table public.leads enable row level security;
 drop policy if exists "leads can be created by public form" on public.leads;

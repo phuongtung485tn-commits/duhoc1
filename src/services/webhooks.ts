@@ -122,9 +122,14 @@ async function sendDirectWebhook(
   label: string,
 ): Promise<WebhookResult> {
   try {
+    const directHeaders = { ...headers };
+    // Keep direct browser fallback as a CORS-simple request. The idempotency
+    // key is already part of the JSON payload, so this header is not required.
+    delete directHeaders["X-Idempotency-Key"];
+    directHeaders["Content-Type"] = "text/plain;charset=UTF-8";
     const response = await fetch(endpoint, {
       method: "POST",
-      headers,
+      headers: directHeaders,
       body: JSON.stringify(body),
       keepalive: true,
     });
@@ -196,6 +201,8 @@ export const WEBHOOK_FIELD_OPTIONS = [
   ["sale_assigned_to", "Email sale được gán"],
   ["sales_distribution_mode", "Chế độ chia sale"],
   ["sales_email_recipients", "Danh sách sale tham gia chia"],
+  ["sales_distribution_weights", "Trọng số phân phối sale"],
+  ["sales_send_webhook", "Bật webhook gán sale"],
   ["landing_url", "URL landing"],
   ["ab_variant", "Biến thể A/B"],
   ["ai_score", "AI score"],
@@ -358,6 +365,13 @@ async function postOne(
             ? (body as Record<string, unknown>)
             : { payload: body },
         );
+        // Apps Script is intentionally sent directly. Routing it through the
+        // Vercel server function adds a 12s timeout and can fail independently
+        // of the working Apps Script deployment.
+        const direct = await sendSheetsDirect(endpoint, request.body);
+        if (direct.ok) {
+          return { ...direct, label: ep.label || ep.type };
+        }
         const relay = await Promise.race([
           relayWebhook({
             data: {
@@ -428,6 +442,14 @@ async function postOne(
         ),
       ]);
       if (relay) {
+        if (!relay.ok) {
+          return sendDirectWebhook(
+            endpoint,
+            body,
+            headers,
+            ep.label || ep.type,
+          );
+        }
         return {
           label: ep.label || ep.type,
           ok: relay.ok,

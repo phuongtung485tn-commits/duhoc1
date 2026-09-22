@@ -118,6 +118,8 @@ function writePayload(payload) {
       "sale_assigned_to",
       "sales_distribution_mode",
       "sales_email_recipients",
+      "sales_distribution_weights",
+      "sales_send_webhook",
       "landing_url",
       "ab_variant",
       "ai_score",
