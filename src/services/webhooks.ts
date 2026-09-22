@@ -123,10 +123,10 @@ async function sendDirectWebhook(
 ): Promise<WebhookResult> {
   try {
     const directHeaders = { ...headers };
-    // Keep direct browser fallback as a CORS-simple request. The idempotency
-    // key is already part of the JSON payload, so this header is not required.
+    // Make accepts the JSON webhook body and the endpoint allows the browser
+    // preflight. Keep the idempotency value in the payload as well.
     delete directHeaders["X-Idempotency-Key"];
-    directHeaders["Content-Type"] = "text/plain;charset=UTF-8";
+    directHeaders["Content-Type"] = "application/json";
     const response = await fetch(endpoint, {
       method: "POST",
       headers: directHeaders,
