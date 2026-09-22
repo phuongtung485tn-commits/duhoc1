@@ -52,6 +52,11 @@ create policy "leads can be created by public form"
   to anon, authenticated
   with check (true);
 
+-- The public form uses the publishable Supabase key when the Vercel server
+-- function is unavailable. Keep this policy explicit so a fresh project does
+-- not silently reject CRM inserts with SQLSTATE 42501.
+grant insert on table public.leads to anon, authenticated;
+
 drop policy if exists "admins can read leads" on public.leads;
 create policy "admins can read leads"
   on public.leads for select

@@ -113,6 +113,38 @@ async function sendSheetsDirect(
   }
 }
 
+async function sendDirectWebhook(
+  endpoint: string,
+  body: unknown,
+  headers: Record<string, string>,
+  label: string,
+): Promise<WebhookResult> {
+  try {
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(body),
+      keepalive: true,
+    });
+    return {
+      label,
+      ok: response.ok,
+      attempts: 1,
+      detail: response.ok ? "direct_browser_post" : `HTTP ${response.status}`,
+    };
+  } catch (error) {
+    return {
+      label,
+      ok: false,
+      attempts: 1,
+      detail:
+        error instanceof Error
+          ? error.message
+          : "Direct webhook request failed",
+    };
+  }
+}
+
 /**
  * Apps Script luôn trả HTTP 200 kể cả khi bản deploy không có doPost.
  * Vì vậy phải đọc nội dung trả về mới biết Sheet có nhận dữ liệu hay không.
@@ -401,19 +433,9 @@ async function postOne(
             : relay.detail || `HTTP ${relay.status}`,
         };
       }
-      return {
-        label: ep.label || ep.type,
-        ok: false,
-        attempts: 1,
-        detail: "Server relay timeout",
-      };
+      return sendDirectWebhook(endpoint, body, headers, ep.label || ep.type);
     } catch {
-      return {
-        label: ep.label || ep.type,
-        ok: false,
-        attempts: 1,
-        detail: "Server relay unavailable",
-      };
+      return sendDirectWebhook(endpoint, body, headers, ep.label || ep.type);
     }
   } catch (err) {
     return {
